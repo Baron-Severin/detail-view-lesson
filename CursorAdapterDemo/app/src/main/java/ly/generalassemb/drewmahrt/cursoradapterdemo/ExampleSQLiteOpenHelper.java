@@ -13,12 +13,36 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+
+import ly.generalassemb.drewmahrt.cursoradapterdemo.setup.GroceryItem;
 
 /**
  * Created by drewmahrt on 12/29/15.
  */
 public class ExampleSQLiteOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ExampleSQLiteOpenHelper.class.getCanonicalName();
+    ExampleSQLiteOpenHelper dbInstance;
+
+//    private ExampleSQLiteOpenHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
+//        super(context, name, factory, version);
+//    }
+//
+//    public ExampleSQLiteOpenHelper getInstance(Context context){
+//        if (dbInstance == null) {
+//            new ExampleSQLiteOpenHelper(context, "db", );
+//        }
+//    }
+
+    private static ExampleSQLiteOpenHelper DB;
+
+    public static ExampleSQLiteOpenHelper getInstance(Context context) {
+        if (DB == null) {
+            DB = new ExampleSQLiteOpenHelper(context);
+        }
+        return DB;
+    }
 
     private static final int DATABASE_VERSION = 1;
     public static final String DATABASE_NAME = "TEST_DB";
@@ -38,7 +62,7 @@ public class ExampleSQLiteOpenHelper extends SQLiteOpenHelper {
                     COL_ITEM_DESCRIPTION + " TEXT )";
 
 
-    public ExampleSQLiteOpenHelper(Context context) {
+    private ExampleSQLiteOpenHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
@@ -53,7 +77,7 @@ public class ExampleSQLiteOpenHelper extends SQLiteOpenHelper {
         this.onCreate(db);
     }
 
-    public Cursor getExampleList(){
+    public List<GroceryItem> getExampleList(){
 
         SQLiteDatabase db = this.getReadableDatabase();
 
@@ -65,6 +89,37 @@ public class ExampleSQLiteOpenHelper extends SQLiteOpenHelper {
                 null, // f. having
                 null, // g. order by
                 null); // h. limit
-        return cursor;
+
+        List<GroceryItem> items = new ArrayList<>();
+        cursor.moveToFirst();
+        while (!cursor.isAfterLast()){
+            int i_id = cursor.getColumnIndex((ExampleSQLiteOpenHelper.COL_ID));
+            int i_name = cursor.getColumnIndex((ExampleSQLiteOpenHelper.COL_ITEM_NAME));
+            int i_desc = cursor.getColumnIndex((ExampleSQLiteOpenHelper.COL_ITEM_DESCRIPTION));
+
+            int id = cursor.getInt(i_id);
+            String name = cursor.getString(i_name);
+            String description = cursor.getString(i_desc);
+
+            items.add(new GroceryItem(id, name, description));
+            cursor.moveToNext();
+        }
+        return items;
     }
+
+    public String getDescription(int position) {
+
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String sql = "SELECT " + COL_ITEM_DESCRIPTION + " FROM " + EXAMPLE_LIST_TABLE_NAME
+                + " WHERE " + COL_ID + " = '" + position + "';";
+        Cursor cursor = db.rawQuery(sql, null);
+
+        cursor.moveToFirst();
+        String description = cursor.getString(0);
+
+        return description;
+    }
+
+
 }
